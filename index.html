@@ -73,6 +73,11 @@ select{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;bac
 .why li{margin:2px 0}
 .watch{margin:6px 0 0;font-size:13.5px;color:var(--mid)}
 .topnote{margin:0 0 6px;font-size:13.5px;font-weight:500}
+.next{margin-top:16px}
+.next h3{font-family:var(--display);font-size:17px;margin:0 0 4px}
+.next p{margin:0 0 12px;max-width:70ch}
+.nextbtn{display:inline-block;padding:9px 14px;border-radius:6px;background:var(--accent);color:var(--accent-ink);font-weight:500;text-decoration:none}
+.next .aside{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
 .asked{margin:0;font-weight:500}
 .card>div{min-width:0}
 .src{font-family:var(--mono);font-size:11px;padding:0 5px;border-radius:3px;border:1px solid var(--line);color:var(--muted);text-decoration:none;white-space:nowrap}
@@ -147,6 +152,12 @@ button.go:disabled{opacity:.5;cursor:default}
     </div>
   </div>
   <ol class="rank" id="rank"></ol>
+  <div class="panel next">
+    <h3>Next step</h3>
+    <p>Want help setting up in <span id="topcity">your top city</span>? Talk to someone who has done it, or see verified GCCs and hiring support on Flexiple’s GCC directory.</p>
+    <a class="nextbtn" href="https://flexiple.com/gcc/india" target="_blank" rel="noopener">Explore Flexiple’s GCC directory</a>
+    <p class="aside">This link does not affect the ranking.</p>
+  </div>
 </section>
 
 <section id="sheet">
@@ -253,7 +264,7 @@ function rank(){
   const sec=$('sector').value; if(sec==='any') w.sector=0;
   const sals=CITIES.map(c=>c.sal),mn=Math.min(...sals),mx=Math.max(...sals),shares=CITIES.map(c=>c.share),smx=Math.max(...shares);
   const tot=w.cost+w.depth+w.policy+w.sector;
-  if(!tot){$('rank').innerHTML='<li class="panel">Raise at least one slider above 0 to rank the cities.</li>';return}
+  if(!tot){$('rank').innerHTML='<li class="panel">Raise at least one slider above 0 to rank the cities.</li>';$('topcity').textContent='your top city';return}
   const S=CITIES.map(c=>({cost:norm(c.sal,mn,mx,true),depth:100*c.share/smx,policy:50*(c.policy-1),sector:sec==='any'?0:(c.sectors.includes(sec)?100:0)}));
   const out=CITIES.map((c,i)=>{
     const s=S[i];
@@ -267,13 +278,15 @@ function rank(){
     return {c,s,score,parts,watch:s[weak]<40?wmsg:''};
   }).sort((a,b)=>b.score-a.score);
   // If the leader wins on one factor while being the weakest of the six on another, say so plainly.
-  const top=out[0],on=['cost','depth','policy','sector'].filter(k=>w[k]>0);
+  const top=out[0];$('topcity').textContent=top.c.name;
+  const on=['cost','depth','policy','sector'].filter(k=>w[k]>0);
   const avg=k=>S.reduce((t,x)=>t+x[k],0)/S.length,lead=k=>w[k]*(top.s[k]-avg(k));
   const main=[...on].sort((a,b)=>lead(b)-lead(a))[0];
   const worst=on.find(k=>k!==main&&top.s[k]===Math.min(...S.map(x=>x[k])));
   const LABEL={cost:'lower talent cost',depth:'its GCC ecosystem',policy:'state policy support',sector:'sector fit'};
   const LOWEST={cost:'its median pay is the highest of the six',depth:'its GCC base is the smallest of the six',policy:'its state support is the weakest of the six',sector:'it has no noted strength in your sector'};
-  const gap=out.length>1?Math.round(top.score-out[1].score):99;
+  // Use the rounded scores shown on the cards so the note matches what's on screen.
+  const gap=out.length>1?Math.round(top.score)-Math.round(out[1].score):99;
   let topnote=worst?`Ranked first mainly on ${LABEL[main]}; ${LOWEST[worst]}.`:'';
   if(gap<5)topnote+=(topnote?' ':'')+`Only ${gap} point${gap===1?'':'s'} ahead of ${out[1].c.name}.`;
   $('rank').innerHTML=out.map((o,i)=>`<li class="card"><div class="pos">${i+1}</div><div><h3>${o.c.name}<span>${o.c.state} · score ${Math.round(o.score)}</span></h3><div class="bar"><i style="width:${Math.round(o.score)}%"></i></div>${i===0&&topnote?`<p class="topnote">${topnote}</p>`:''}<ul class="why">${o.parts.map(p=>`<li>${p[1]}</li>`).join('')||'<li>No factor scores above the midpoint for your settings.</li>'}</ul>${o.watch?`<p class="watch">Watch out: ${o.watch}</p>`:''}</div></li>`).join('');
@@ -286,8 +299,8 @@ function renderChips(){
 }
 function showAnswer(text){
   const a=$('answer');a.classList.remove('empty');a.textContent='';
-  // Models sometimes write "[ S5]" or "[S3, S7]"; normalise to one [S#] per id before linking.
-  text=text.replace(/\[\s*(S\d(?:\s*[,;]\s*S\d)*)\s*\]/g,(_,ids)=>ids.split(/\s*[,;]\s*/).map(x=>`[${x}]`).join(''));
+  // Models sometimes write "[ S5]", "[S3, S7]" or "【S2】"; normalise to one [S#] per id before linking.
+  text=text.replace(/[\[【]\s*(S\d(?:\s*[,;]\s*S\d)*)\s*[\]】]/g,(_,ids)=>ids.split(/\s*[,;]\s*/).map(x=>`[${x}]`).join(''));
   text.split(/(\[S\d\])/).forEach(p=>{const m=p.match(/^\[(S\d)\]$/);if(m&&SRC[m[1]]){const l=document.createElement('a');l.className='src';l.href=SRC[m[1]].url;l.target='_blank';l.rel='noopener';l.textContent=m[1];a.appendChild(l)}else a.appendChild(document.createTextNode(p))});
 }
 // Calls the serverless /api/ask endpoint and streams plain text back; onText gets the text so far.
@@ -303,7 +316,7 @@ async function ask(q){
   const a=$('answer');a.classList.remove('empty');
   $('asked').hidden=false;$('asked').textContent=q;
   $('send').disabled=true;a.textContent='Thinking...';
-  const data={sources:Object.fromEntries(Object.entries(SRC).map(([k,v])=>[k,v.name+' ('+v.conf+')'])),cities:CITIES.map(c=>({city:c.name,state:c.state,figures:Object.fromEntries(Object.entries(c.rows).map(([k,f])=>[k,f?f.t+' ['+f.s+']':'not found']))})),disagreements:CONFLICTS.map(c=>({question:c.q,claims:c.claims.map(x=>x[1]+' ['+x[0]+']')}))};
+  const data={sources:Object.fromEntries(Object.entries(SRC).map(([k,v])=>[k,v.name+' ('+v.conf+')'])),cities:CITIES.map(c=>({city:c.name,state:c.state,figures:Object.fromEntries(Object.entries(c.rows).map(([k,f])=>[k,f?f.t+' ['+f.s+']':'not found']))})),disagreements:CONFLICTS.map(c=>({question:c.q,claims:c.claims.map(x=>x[1]+' ['+x[0]+']'),why:c.treat.split('. ')[0]+'.'}))};
   try{const t=await askApi({task:'answer',input:q,data},showAnswer);showAnswer(t)}
   catch(e){a.classList.add('empty');a.textContent=e.status===429?'Too many questions in a short time. Try again in a few minutes. The shortlist, sheet and source comparison above still work.':'The assistant could not answer just now. Try again in a moment. The shortlist, sheet and source comparison above still work.'}
   finally{$('send').disabled=false}
@@ -311,20 +324,22 @@ async function ask(q){
 ['w-cost','w-depth','w-policy','w-sector','sector'].forEach(id=>$(id).addEventListener('input',rank));
 $('askform').addEventListener('submit',e=>{e.preventDefault();ask($('q').value);$('q').value=''});
 
+function applyWeights(j){
+  const cl=v=>Math.max(0,Math.min(5,Math.round(+v)));
+  const ok=['any','tech','bfsi','eng','life','retail'];
+  ['cost','depth','policy','sector'].forEach(k=>{$('w-'+k).value=cl(j[k])});
+  $('sector').value=ok.includes(j.sector_choice)?j.sector_choice:'any';
+  if($('sector').value==='any')$('w-sector').value=0;
+  rank();
+  $('setnote').textContent=(j.reason?String(j.reason)+' ':'')+'Adjust the sliders below if you disagree.';
+}
 async function setFromText(txt){
   txt=(txt||'').trim();const n=$('setnote');if(!txt)return;
   $('setbtn').disabled=true;n.textContent='Reading your situation...';
   try{
     const t=await askApi({task:'weights',input:txt});
     const m=(t||'').match(/\{[\s\S]*\}/);if(!m)throw new Error('parse');
-    const j=JSON.parse(m[0]);
-    const cl=v=>Math.max(0,Math.min(5,Math.round(+v)));
-    const ok=['any','tech','bfsi','eng','life','retail'];
-    ['cost','depth','policy','sector'].forEach(k=>{$('w-'+k).value=cl(j[k])});
-    $('sector').value=ok.includes(j.sector_choice)?j.sector_choice:'any';
-    if($('sector').value==='any')$('w-sector').value=0;
-    rank();
-    n.textContent=(j.reason?String(j.reason)+' ':'')+'Adjust the sliders below if you disagree.';
+    applyWeights(JSON.parse(m[0]));
   }catch(e){
     n.textContent=e.status?'The assistant is unavailable right now, so the ranking uses default weights. Set the sliders yourself below.':'I could not read that. Try rephrasing, or use the sliders.';
   }finally{$('setbtn').disabled=false}
@@ -340,14 +355,19 @@ function submitTop(txt){
   else{reveal('shortlist');setFromText(txt)}
 }
 // Each sample touches all four sliders (cost, ecosystem depth, state policy, sector) so the effect is visible.
+// Their weights are fixed so the examples give the same ranking every time; edited text goes to the assistant.
 const SAMPLES=[
- ['Fintech','US fintech starting with 150 engineers. Budget is tight so low pay matters most, we want an established GCC hub to hire from, state incentives would help, and we need BFSI and payments talent.'],
- ['Manufacturing','German auto-parts maker planning 300 engineers over two years. A dedicated state GCC policy is a must and engineering and manufacturing strength is key; ecosystem size matters less and cost is secondary.'],
- ['Life sciences','Pharma company building a data and analytics team. Life sciences talent and a deep GCC ecosystem come first, cost is flexible, and state policy support is a nice-to-have.'],
- ['Software','SaaS scale-up opening its first India centre for cloud engineering. We want the deepest tech ecosystem and strong software talent, and care little about cost or state incentives.']
+ ['Fintech','US fintech starting with 150 engineers. Budget is tight so low pay matters most, we want an established GCC hub to hire from, state incentives would help, and we need BFSI and payments talent.',
+  {cost:5,depth:4,policy:3,sector:5,sector_choice:'bfsi',reason:'Cost highest because the budget is tight, BFSI sector fit high, ecosystem depth fairly high for hiring, and state incentives moderate.'}],
+ ['Manufacturing','German auto-parts maker planning 300 engineers over two years. A dedicated state GCC policy is a must and engineering and manufacturing strength is key; ecosystem size matters less and cost is secondary.',
+  {cost:1,depth:1,policy:5,sector:5,sector_choice:'eng',reason:'State policy and engineering sector fit highest as must-haves; ecosystem size and cost low as secondary.'}],
+ ['Life sciences','Pharma company building a data and analytics team. Life sciences talent and a deep GCC ecosystem come first, cost is flexible, and state policy support is a nice-to-have.',
+  {cost:1,depth:5,policy:2,sector:5,sector_choice:'life',reason:'Life sciences fit and ecosystem depth highest as they come first; cost low as flexible; state policy modest as a nice-to-have.'}],
+ ['Software','SaaS scale-up opening its first India centre for cloud engineering. We want the deepest tech ecosystem and strong software talent, and care little about cost or state incentives.',
+  {cost:1,depth:5,policy:1,sector:5,sector_choice:'tech',reason:'Ecosystem depth and software sector fit highest; cost and state incentives low as they matter little.'}]
 ];
 $('samples').innerHTML=SAMPLES.map(([k,s])=>`<button class="sample" type="button"><b>${k}</b>${s}</button>`).join('');
-[...$('samples').children].forEach((b,i)=>b.addEventListener('click',()=>{$('situation').value=SAMPLES[i][1];submitTop(SAMPLES[i][1])}));
+[...$('samples').children].forEach((b,i)=>b.addEventListener('click',()=>{$('situation').value=SAMPLES[i][1];reveal('shortlist');applyWeights(SAMPLES[i][2])}));
 $('describe').addEventListener('submit',e=>{e.preventDefault();submitTop($('situation').value)});
 renderTable();renderConf();renderSrcs();renderChips();rank();
 </script>
