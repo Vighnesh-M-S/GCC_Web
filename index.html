@@ -1,0 +1,304 @@
+<title>GCC Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: a field-notes ledger. Every claim sits next to its source tag; the page reads like an annotated map table, not a dashboard. */
+:root{
+  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#0E1B2B; --muted:#586577; --line:#D8DEE5;
+  --accent:#0B6E6E; --accent-soft:#DCEFEF; --accent-ink:#FFFFFF;
+  --good:#1B7F4C; --mid:#A9690A; --low:#B13A3A; --warn-bg:#FBF1E1;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1520; --surface:#132130; --ink:#E7EEF6; --muted:#9AA9BA; --line:#26384B;
+    --accent:#5CC9C9; --accent-soft:#143A3E; --accent-ink:#06222A;
+    --good:#52C38A; --mid:#E0A24A; --low:#EE7A7A; --warn-bg:#2B2418; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1520; --surface:#132130; --ink:#E7EEF6; --muted:#9AA9BA; --line:#26384B;
+  --accent:#5CC9C9; --accent-soft:#143A3E; --accent-ink:#06222A;
+  --good:#52C38A; --mid:#E0A24A; --low:#EE7A7A; --warn-bg:#2B2418; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-block:0 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1080px;margin:0 auto}
+header{padding-block:36px 18px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,48px);line-height:1.05;margin:6px 0 10px;text-wrap:balance}
+.lede{max-width:62ch;color:var(--muted);font-size:16px;margin:0}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:18px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.stats b{color:var(--ink);font-weight:500}
+section{margin-top:34px}
+h2{font-family:var(--display);font-size:24px;margin:0 0 4px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 16px;max-width:70ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px 22px}
+.ctrl label{display:flex;justify-content:space-between;font-weight:500;font-size:14px}
+.ctrl output{font-family:var(--mono);color:var(--accent)}
+.ctrl small{display:block;color:var(--muted);font-size:12.5px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+
+.describe{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.describe>label{font-weight:500;font-size:14px;display:block;margin-bottom:6px}
+.describe .opt{color:var(--muted);font-weight:400;font-size:12.5px;margin-left:6px}
+.describe .row{display:flex;gap:8px;flex-wrap:wrap}
+.describe input{flex:1 1 260px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;min-width:0}
+.describe button{padding:9px 14px;border:0;border-radius:6px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:500;cursor:pointer}
+.describe button:disabled{opacity:.6;cursor:default}
+.setnote{margin:8px 0 0;font-size:13.5px;color:var(--muted);min-height:1em}
+select{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rank{display:grid;gap:10px;margin-top:16px;padding:0;list-style:none}
+.card{display:grid;grid-template-columns:44px 1fr;gap:6px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.pos{font-family:var(--display);font-size:30px;font-weight:700;color:var(--accent);line-height:1}
+.card h3{font-family:var(--display);margin:0;font-size:19px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.card h3 span{font-family:var(--mono);font-size:12.5px;color:var(--muted);font-weight:400}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:6px 0 8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.why{margin:0;padding-left:18px;font-size:14px}
+.why li{margin:2px 0}
+.watch{margin:6px 0 0;font-size:13.5px;color:var(--mid)}
+.card>div{min-width:0}
+.src{font-family:var(--mono);font-size:11px;padding:0 5px;border-radius:3px;border:1px solid var(--line);color:var(--muted);text-decoration:none;white-space:nowrap}
+.src:hover{border-color:var(--accent);color:var(--accent)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px}
+.c-report{background:var(--good)} .c-platform{background:var(--mid)} .c-blog{background:var(--low)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--display);font-size:14px;background:var(--bg)}
+tbody th{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--muted);width:140px}
+tr:last-child th,tr:last-child td{border-bottom:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+.conf{display:grid;gap:12px}
+.conf article{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.conf h3{margin:0 0 8px;font-family:var(--display);font-size:17px}
+.claims{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.claim{background:var(--bg);border-radius:6px;padding:8px 10px;font-size:13.5px}
+.claim b{font-family:var(--mono);font-weight:500}
+.treat{margin:10px 0 0;font-size:13.5px;color:var(--muted)}
+.treat strong{color:var(--accent)}
+.ask{display:grid;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.askrow{display:flex;gap:8px;flex-wrap:wrap}
+.askrow input{flex:1 1 260px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit}
+button.go{padding:10px 16px;border:0;border-radius:6px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:600;cursor:pointer}
+button.go:disabled{opacity:.5;cursor:default}
+.answer{min-height:60px;white-space:pre-wrap;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;padding:12px 14px}
+.answer.empty{color:var(--muted)}
+.srcs{display:grid;gap:6px;padding:0;margin:0;list-style:none;font-size:13.5px}
+.srcs li{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.srcs a.t{color:var(--ink)}
+.note{font-size:12.5px;color:var(--muted);margin-top:26px;max-width:80ch}
+@media (max-width:520px){.card{grid-template-columns:34px 1fr}.pos{font-size:24px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="kicker">GCC Atlas · prototype · data as of 21 Oct 2026</div>
+  <h1>Where should we set up in India? Every number shows where it came from.</h1>
+  <p class="lede">For a company opening a Global Capability Centre. Set what matters to you, get a ranked shortlist with reasons, and see where the published reports disagree instead of picking one without knowing.</p>
+  <div class="stats">
+    <span><b>2,117</b> GCCs / 3,728 centres (Zinnov-Nasscom, FY2026)</span>
+    <span><b>6</b> cities compared</span>
+    <span><b>9</b> sources, each linked</span>
+  </div>
+</header>
+
+<section id="shortlist">
+  <h2>1. Your shortlist</h2>
+  <p class="sub">Describe your situation or move the sliders yourself. Scores use only the figures in the sheet below, rescaled across the six cities. Set a slider to 0 to ignore a factor.</p>
+  <div class="panel">
+    <form id="describe" class="describe">
+      <label for="situation">Describe your situation <span class="opt">optional, or just use the sliders</span></label>
+      <div class="row"><input id="situation" type="text" maxlength="400" placeholder="e.g. US fintech, 150 people in year one, tight budget, need payments engineers" autocomplete="off"><button id="setbtn" type="submit">Set my priorities</button></div>
+      <p id="setnote" class="setnote" aria-live="polite"></p>
+    </form>
+    <div class="ctrls">
+      <div class="ctrl"><label for="w-cost">Lower talent cost <output id="o-cost">3</output></label><input id="w-cost" type="range" min="0" max="5" value="3"><small>Software engineer median pay</small></div>
+      <div class="ctrl"><label for="w-depth">Deep GCC ecosystem <output id="o-depth">3</output></label><input id="w-depth" type="range" min="0" max="5" value="3"><small>Share of GCC office leasing</small></div>
+      <div class="ctrl"><label for="w-policy">State policy support <output id="o-policy">2</output></label><input id="w-policy" type="range" min="0" max="5" value="2"><small>Dedicated GCC policy or not</small></div>
+      <div class="ctrl"><label for="w-sector">Sector fit <output id="o-sector">2</output></label><input id="w-sector" type="range" min="0" max="5" value="2"><small>Only counts if you pick a sector</small>
+        <select id="sector" aria-label="Your sector"><option value="any">No sector chosen</option><option value="tech">Software and cloud</option><option value="bfsi">BFSI and fintech</option><option value="eng">Engineering and manufacturing</option><option value="life">Life sciences</option><option value="retail">Retail and enterprise services</option></select></div>
+    </div>
+  </div>
+  <ol class="rank" id="rank"></ol>
+</section>
+
+<section id="sheet">
+  <h2>2. City sheet</h2>
+  <p class="sub">The raw figures behind the ranking. The dot shows how far to trust each source.</p>
+  <div class="tablewrap"><table id="table"></table></div>
+  <div class="legend">
+    <span><i class="dot c-report"></i>Advisory or industry report</span>
+    <span><i class="dot c-platform"></i>Platform data or vendor press release (partial or promotional)</span>
+    <span><i class="dot c-blog"></i>Single blog source, treat as indicative</span>
+  </div>
+</section>
+
+<section id="conflicts">
+  <h2>3. Where the sources disagree</h2>
+  <p class="sub">This is the gap a newcomer falls into. Atlas keeps every claim, with its source and date, and explains the likely reason for the difference.</p>
+  <div class="conf" id="conf"></div>
+</section>
+
+<section id="ask">
+  <h2>4. Ask Atlas</h2>
+  <p class="sub">Answers use only the data on this page and cite the sources. If something is not in the data, it says so.</p>
+  <div class="ask">
+    <div class="chips" id="chips"></div>
+    <form class="askrow" id="askform">
+      <input id="q" type="text" placeholder="Ask about a city, an incentive or a number" aria-label="Your question">
+      <button class="go" id="send" type="submit">Ask</button>
+    </form>
+    <div class="answer empty" id="answer" aria-live="polite">Pick a question above or type your own.</div>
+  </div>
+</section>
+
+<section id="sources">
+  <h2>Sources</h2>
+  <ul class="srcs" id="srcs"></ul>
+  <p class="note">Built from public sources collected on 21 October 2026. Figures are as reported and are not independently verified. Rankings are a starting point for discussion, not legal, tax or investment advice. Not yet covered: provider track records, incentive amounts by state and Tier-2 cities.</p>
+</section>
+</div>
+
+<script>
+const SRC = {
+  S1:{name:'Zinnov-Nasscom, India GCC Landscape 2026 (FY2026, data to Mar 2026)',url:'https://zinnov.com/centers-of-excellence/zinnov-nasscom-india-gcc-landscape-2026-report/',conf:'report'},
+  S2:{name:'JLL India press release, 17 Feb 2026',url:'https://www.jll.com/en-in/newsroom/india-s-gcc-expansion-hits-record-31-million',conf:'report'},
+  S3:{name:'CBRE, The Policy Advantage (via Entrepreneur India, 14 Aug 2026)',url:'https://india.entrepreneur.com/business-news/states-target-1-1-mn-gcc-jobs-by-2031-cbre',conf:'report'},
+  S4:{name:'Cushman & Wakefield, Q2 2026 Office Market Beat (via ANI, 21 Aug 2026)',url:'https://www.newkerala.com/news/a/only-four-cities-hold-nearly-80-share-indias-952.htm',conf:'report'},
+  S5:{name:'Flexiple, GCC statistics page (Aug 2026), pay medians from its own platform',url:'https://flexiple.com/gcc/statistics',conf:'platform'},
+  S6:{name:'People Matters citing JLL, 30 Oct 2024',url:'https://www.peoplematters.in/news/business/indias-gcc-sector-surges-past-1800-centres-43251',conf:'report'},
+  S7:{name:'InTech Group blog, best cities for a GCC (single secondary source)',url:'https://theintechgroup.com/blog/best-cities-for-gcc-set-up-in-india/',conf:'blog'},
+  S8:{name:'ANSR, Emerging Cities report 2026 (press release via CXO Digital Pulse, 27 May 2026)',url:'https://www.cxodigitalpulse.com/?p=54894',conf:'platform'},
+  S9:{name:'Wisemonk, why GCC set-ups stall (service provider blog, 9 Sep 2026)',url:'https://www.wisemonk.io/blogs/why-gcc-gbs-setups-fail-india',conf:'blog'}
+};
+const F=(t,s)=>({t,s});
+const CITIES=[
+ {id:'blr',name:'Bengaluru',state:'Karnataka',sal:15.7,share:42,policy:3,sectors:['tech'],
+  rows:{share:F('~42% of GCC leasing, 2022 to H1 2026 (over 51 mn sq ft)','S3'),h1:F('5.36 mn sq ft, #1','S4'),pay:F('Rs 15.7L median, Rs 32.5L senior (6+ yrs)','S5'),pol:F('Dedicated policy: about 500 new GCCs and 3.5 lakh jobs by 2029','S3'),sec:F('Cloud, semiconductors','S7'),rent:F('$1.80 per sq ft per month','S7'),attr:F('22%','S7')}},
+ {id:'hyd',name:'Hyderabad',state:'Telangana',sal:10.4,share:20,policy:2,sectors:['life','bfsi','tech'],
+  rows:{share:F('~20% (over 24 mn sq ft)','S3'),h1:F('Outside top four (under 2.23 mn sq ft)','S4'),pay:F('Rs 10.4L median, Rs 24.2L senior','S5'),pol:F('Policy framework adopted','S3'),sec:F('Life sciences, fintech','S7'),rent:F('$0.90 to $1.60','S7'),attr:null}},
+ {id:'pune',name:'Pune',state:'Maharashtra',sal:9.5,share:10.5,policy:3,sectors:['eng'],
+  rows:{share:F('~10 to 11% (over 13 mn sq ft)','S3'),h1:F('3.01 mn sq ft, #2','S4'),pay:F('Rs 9.5L median, Rs 22.3L senior','S5'),pol:F('Maharashtra dedicated policy','S3'),sec:F('ER&D, manufacturing','S7'),rent:F('$0.80','S7'),attr:F('about 16%','S7')}},
+ {id:'chn',name:'Chennai',state:'Tamil Nadu',sal:7.6,share:10.5,policy:1,sectors:['bfsi','eng'],
+  rows:{share:F('~10 to 11% (over 13 mn sq ft)','S3'),h1:F('Outside top four (under 2.23 mn sq ft)','S4'),pay:F('Rs 7.6L median, Rs 19.1L senior','S5'),pol:F('Incentives for GCC employees, no dedicated policy','S3'),sec:F('BFSI, semiconductors','S7'),rent:null,attr:null}},
+ {id:'del',name:'Delhi NCR',state:'Haryana / Delhi / UP',sal:14.1,share:10.5,policy:3,sectors:['retail'],
+  rows:{share:F('~10 to 11% (over 13 mn sq ft)','S3'),h1:F('2.37 mn sq ft, #3','S4'),pay:F('Rs 14.1L median, Rs 24.0L senior','S5'),pol:F('Haryana dedicated policy; Delhi framework adopted','S3'),sec:F('Gurugram: retail, B2B enterprise','S7'),rent:F('Gurgaon $0.80 to $1.80','S7'),attr:null}},
+ {id:'mum',name:'Mumbai',state:'Maharashtra',sal:9.7,share:4,policy:3,sectors:['bfsi'],
+  rows:{share:F('~4% (about 5 mn sq ft)','S3'),h1:F('2.23 mn sq ft, #4','S4'),pay:F('Rs 9.7L median, Rs 22.8L senior','S5'),pol:F('Maharashtra dedicated policy','S3'),sec:F('Preferred by BFSI occupiers','S3'),rent:null,attr:null}}
+];
+const ROWS=[['share','GCC leasing share'],['h1','H1 2026 GCC leasing'],['pay','Software engineer pay'],['pol','State policy'],['sec','Sector strength'],['rent','Rent (indicative)'],['attr','Attrition (indicative)']];
+const CONFLICTS=[
+ {q:'How many GCCs are there in India?',claims:[['S6','1,800+ centres, serving 1,400+ global firms (Oct 2024)'],['S8','1,900+ GCCs and 2.1M people (ANSR, May 2026)'],['S1','2,117 GCCs across 3,728 centres (FY2026)'],['S5','536 verified GCCs in Flexiple\'s own directory']],
+  treat:'The counts differ in date and in what is counted (companies, centres, or ones a platform has verified). Atlas would show the count with its unit and date and let a user pick the definition.'},
+ {q:'How much office space did GCCs lease in 2025?',claims:[['S2','31 mn sq ft, a record (JLL)'],['S5','About 28 mn sq ft (Colliers, as cited)']],
+  treat:'Two advisory firms measure leasing differently. Atlas would show the range and name each firm\'s method.'},
+ {q:'What share of GCC activity is in Bengaluru?',claims:[['S2','34 to 39% of GCC activity, 900+ units (JLL)'],['S3','About 42% of GCC leasing, 2022 to H1 2026 (CBRE)']],
+  treat:'One measures activity, the other leasing over a different period. Atlas would label the measure and the period.'},
+ {q:'How big is Pune\'s share?',claims:[['S2','15 to 20% of national GCC activity (JLL)'],['S3','About 10 to 11% of GCC leasing (CBRE)']],
+  treat:'The gap is large enough to change a ranking. Atlas would flag it and use the narrower leasing figure in the score.'},
+ {q:'How many new GCCs does Maharashtra target by 2030?',claims:[['S5','About 400 new GCCs (state policy, as cited)'],['S3','About 200 centres and 4 lakh jobs (CBRE summary)']],
+  treat:'Possibly two readings of the same policy. Atlas would link the policy text itself as the final source.'},
+ {q:'What is attrition in Bengaluru?',claims:[['S7','22% (blog)'],['S9','About 25%, adding 15 to 20% to annual cost per engineer (vendor blog, Sep 2026)']],
+  treat:'Two vendor blogs with no stated method. Atlas would mark both low confidence and show the range.'}
+];
+
+const $=id=>document.getElementById(id);
+function tag(s){const x=SRC[s];return `<a class="src" href="${x.url}" target="_blank" rel="noopener" title="${x.name}"><i class="dot c-${x.conf}"></i>${s}</a>`}
+function cell(f){return f?`${f.t} ${tag(f.s)}`:'<span style="color:var(--muted)">Not found in sources</span>'}
+
+function renderTable(){
+  let h='<thead><tr><th></th>'+CITIES.map(c=>`<th>${c.name}<br><span style="font:400 11px var(--mono);color:var(--muted)">${c.state}</span></th>`).join('')+'</tr></thead><tbody>';
+  ROWS.forEach(([k,l])=>{h+=`<tr><th>${l}</th>`+CITIES.map(c=>`<td>${cell(c.rows[k])}</td>`).join('')+'</tr>'});
+  $('table').innerHTML=h+'</tbody>';
+}
+function renderConf(){
+  $('conf').innerHTML=CONFLICTS.map(c=>`<article><h3>${c.q}</h3><div class="claims">${c.claims.map(([s,t])=>`<div class="claim"><b>${s}</b> ${t} ${tag(s)}</div>`).join('')}</div><p class="treat"><strong>How Atlas treats it:</strong> ${c.treat}</p></article>`).join('');
+}
+function renderSrcs(){
+  $('srcs').innerHTML=Object.entries(SRC).map(([k,v])=>`<li><span class="src"><i class="dot c-${v.conf}"></i>${k}</span><a class="t" href="${v.url}" target="_blank" rel="noopener">${v.name}</a></li>`).join('');
+}
+function norm(v,min,max,inv){const n=(v-min)/(max-min);return 100*(inv?1-n:n)}
+function rank(){
+  const w={cost:+$('w-cost').value,depth:+$('w-depth').value,policy:+$('w-policy').value,sector:+$('w-sector').value};
+  ['cost','depth','policy','sector'].forEach(k=>{$('o-'+k).textContent=w[k]});
+  const sec=$('sector').value; if(sec==='any') w.sector=0;
+  const sals=CITIES.map(c=>c.sal),mn=Math.min(...sals),mx=Math.max(...sals),shares=CITIES.map(c=>c.share),smx=Math.max(...shares);
+  const tot=w.cost+w.depth+w.policy+w.sector;
+  if(!tot){$('rank').innerHTML='<li class="panel">Raise at least one slider above 0 to rank the cities.</li>';return}
+  const out=CITIES.map(c=>{
+    const s={cost:norm(c.sal,mn,mx,true),depth:100*c.share/smx,policy:50*(c.policy-1),sector:sec==='any'?0:(c.sectors.includes(sec)?100:0)};
+    const score=(w.cost*s.cost+w.depth*s.depth+w.policy*s.policy+w.sector*s.sector)/tot;
+    const parts=[['cost',`Median software engineer pay is Rs ${c.sal}L, ${s.cost>=70?'among the lowest':'mid-range'} of the six ${tag('S5')}`],
+      ['depth',`GCC leasing share: ${c.rows.share.t} ${tag('S3')}`],
+      ['policy',`${c.rows.pol.t} ${tag('S3')}`],
+      ['sector',`${c.rows.sec.t} for your sector ${tag(c.rows.sec.s)}`]].filter(p=>w[p[0]]>0&&s[p[0]]>=50).sort((a,b)=>w[b[0]]*s[b[0]]-w[a[0]]*s[a[0]]).slice(0,3);
+    const weak=['cost','depth','policy','sector'].filter(k=>w[k]>0).sort((a,b)=>s[a]-s[b])[0];
+    const wmsg={cost:`Pay is high for the group (Rs ${c.sal}L median)`,depth:`Smaller GCC base (${c.rows.share.t})`,policy:`Weaker state support: ${c.rows.pol.t}`,sector:`Not a noted strength for your sector`}[weak];
+    return {c,score,parts,watch:s[weak]<40?wmsg:''};
+  }).sort((a,b)=>b.score-a.score);
+  $('rank').innerHTML=out.map((o,i)=>`<li class="card"><div class="pos">${i+1}</div><div><h3>${o.c.name}<span>${o.c.state} · score ${Math.round(o.score)}</span></h3><div class="bar"><i style="width:${Math.round(o.score)}%"></i></div><ul class="why">${o.parts.map(p=>`<li>${p[1]}</li>`).join('')||'<li>No factor scores above the midpoint for your settings.</li>'}</ul>${o.watch?`<p class="watch">Watch out: ${o.watch}</p>`:''}</div></li>`).join('');
+}
+
+const QS=['Which city is cheapest for software engineers, and what is the trade-off?','Why do reports disagree on Bengaluru\'s share?','We are a BFSI company. Where should we start?','What policy support does Maharashtra offer?'];
+function renderChips(){
+  $('chips').innerHTML=QS.map(q=>`<button class="chip" type="button">${q}</button>`).join('');
+  [...$('chips').children].forEach((b,i)=>b.addEventListener('click',()=>{$('q').value=QS[i];ask(QS[i])}));
+}
+function showAnswer(text){
+  const a=$('answer');a.classList.remove('empty');a.textContent='';
+  text.split(/(\[S\d\])/).forEach(p=>{const m=p.match(/^\[(S\d)\]$/);if(m&&SRC[m[1]]){const l=document.createElement('a');l.className='src';l.href=SRC[m[1]].url;l.target='_blank';l.rel='noopener';l.textContent=m[1];a.appendChild(l)}else a.appendChild(document.createTextNode(p))});
+}
+// Calls the serverless /api/ask endpoint and streams plain text back; onText gets the text so far.
+async function askApi(body,onText){
+  const res=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok||!res.body)throw new Error('http '+res.status);
+  const rd=res.body.getReader(),dec=new TextDecoder();let t='';
+  for(;;){const{done,value}=await rd.read();if(done)break;t+=dec.decode(value,{stream:true});if(onText)onText(t)}
+  return t+dec.decode();
+}
+async function ask(q){
+  q=(q||'').trim();if(!q)return;
+  const a=$('answer');a.classList.remove('empty');
+  $('send').disabled=true;a.textContent='Thinking...';
+  const data={sources:Object.fromEntries(Object.entries(SRC).map(([k,v])=>[k,v.name+' ('+v.conf+')'])),cities:CITIES.map(c=>({city:c.name,state:c.state,figures:Object.fromEntries(Object.entries(c.rows).map(([k,f])=>[k,f?f.t+' ['+f.s+']':'not found']))})),disagreements:CONFLICTS.map(c=>({question:c.q,claims:c.claims.map(x=>x[1]+' ['+x[0]+']')}))};
+  try{const t=await askApi({task:'answer',input:q,data},showAnswer);showAnswer(t)}
+  catch(e){a.classList.add('empty');a.textContent='The assistant could not answer just now. Try again in a moment. The shortlist, sheet and source comparison above still work.'}
+  finally{$('send').disabled=false}
+}
+['w-cost','w-depth','w-policy','w-sector','sector'].forEach(id=>$(id).addEventListener('input',rank));
+$('askform').addEventListener('submit',e=>{e.preventDefault();ask($('q').value)});
+
+async function setFromText(txt){
+  txt=(txt||'').trim();const n=$('setnote');if(!txt)return;
+  $('setbtn').disabled=true;n.textContent='Reading your situation...';
+  try{
+    const t=await askApi({task:'weights',input:txt});
+    const m=(t||'').match(/\{[\s\S]*\}/);if(!m)throw new Error('parse');
+    const j=JSON.parse(m[0]);
+    const cl=v=>Math.max(0,Math.min(5,Math.round(+v)));
+    const ok=['any','tech','bfsi','eng','life','retail'];
+    ['cost','depth','policy','sector'].forEach(k=>{$('w-'+k).value=cl(j[k])});
+    $('sector').value=ok.includes(j.sector_choice)?j.sector_choice:'any';
+    if($('sector').value==='any')$('w-sector').value=0;
+    rank();
+    n.textContent=(j.reason?String(j.reason)+' ':'')+'Adjust the sliders below if you disagree.';
+  }catch(e){
+    n.textContent='I could not read that. Try rephrasing, or use the sliders.';
+  }finally{$('setbtn').disabled=false}
+}
+$('describe').addEventListener('submit',e=>{e.preventDefault();setFromText($('situation').value)});
+renderTable();renderConf();renderSrcs();renderChips();rank();
+</script>

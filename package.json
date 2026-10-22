@@ -1,0 +1,5 @@
+{
+  "name": "gcc-atlas",
+  "private": true,
+  "type": "module"
+}
